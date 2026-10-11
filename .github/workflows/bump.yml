@@ -1,0 +1,43 @@
+# Keeps Casks/openadmiral.rb on the version openadmiral.com serves: every few hours
+# it reads the update manifest and, when there is a newer version, downloads the dmg,
+# checks its hash and commits the new version. Run it by hand from the Actions tab
+# right after a release.
+name: Bump OpenAdmiral
+
+on:
+  schedule:
+    - cron: "17 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update the cask to the latest version
+        id: bump
+        run: |
+          set -euo pipefail
+          cask=Casks/openadmiral.rb
+          latest=$(curl -fsSL https://openadmiral.com/updates/latest.json | jq -r .version)
+          current=$(sed -nE 's/^  version "([^"]+)"/\1/p' "$cask")
+          echo "latest $latest, cask $current"
+          if [ -z "$latest" ] || [ "$latest" = "null" ] || [ "$latest" = "$current" ]; then exit 0; fi
+          url="https://openadmiral.com/downloads/${latest}/OpenAdmiral_${latest}_universal.dmg"
+          curl -fsSL "$url" -o app.dmg
+          sha=$(sha256sum app.dmg | cut -d' ' -f1)
+          sed -i -E "s/^  version \".*\"/  version \"${latest}\"/; s/^  sha256 \".*\"/  sha256 \"${sha}\"/" "$cask"
+          rm app.dmg
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+
+      - name: Commit
+        if: steps.bump.outputs.version != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "openadmiral ${{ steps.bump.outputs.version }}"
+          git push
