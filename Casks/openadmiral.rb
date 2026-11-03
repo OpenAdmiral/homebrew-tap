@@ -1,6 +1,6 @@
 cask "openadmiral" do
-  version "0.1.11"
-  sha256 "0ea26f191ed215c8d47c4eaa503fcdc4b3ff1aa97a7c2d1f5f8730cbe6876b0b"
+  version "0.1.12"
+  sha256 "64281f96889976fa1fa652d0a5bd87eef5f9ced0559cef026f217ba5584462ef"
 
   url "https://openadmiral.com/downloads/#{version}/OpenAdmiral_#{version}_universal.dmg"
   name "OpenAdmiral"
